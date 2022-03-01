@@ -111,13 +111,16 @@ def main(args):
     TODO: Initialize a model by calling the net function
     '''
     model=net()
-    hook = smd.Hook.create_from_json_file()
+#     hook = smd.Hook.create_from_json_file()
+    hook = smd.Hook(out_dir=args.output_dir)
     hook.register_hook(model)
+    
     '''
     TODO: Create your loss and optimizer
     '''
     loss_criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.fc.parameters(), lr=0.001)
+    hook.register_loss(loss_criterion)
     
     '''
     TODO: Call the train function to start training your model
