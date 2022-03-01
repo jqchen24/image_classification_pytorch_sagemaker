@@ -7,7 +7,15 @@ import torch.optim as optim
 import torchvision
 import torchvision.models as models
 import torchvision.transforms as transforms
+import torch.nn.functional as F
 import os
+import sys
+import json
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+
 
 import argparse
 
@@ -40,53 +48,26 @@ def train(model, train_loader, criterion, optimizer):
           data loaders for training and will get train the model
           Remember to include any debugging/profiling hooks that you might need
     '''
-    best_loss=1e6
-    image_dataset={'train':train_loader, 'valid':validation_loader}
-    loss_counter=0
+    model.train()
     
-    for phase in ['train', 'valid']:
-        if phase=='train':
-            model.train()
-        else:
-            model.eval()
-        running_loss = 0.0
-        running_corrects = 0
-        running_samples=0
-
-        for step, (inputs, labels) in enumerate(image_dataset[phase]):
-            inputs=inputs.to(device)
-            labels=labels.to(device)
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-
-            if phase=='train':
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
-            _, preds = torch.max(outputs, 1)
-            running_loss += loss.item() * inputs.size(0)
-            running_corrects += torch.sum(preds == labels.data).item()
-            running_samples+=len(inputs)
-            if running_samples % 2000  == 0:
-                accuracy = running_corrects/running_samples
-                print("Images [{}/{} ({:.0f}%)] Loss: {:.2f} Accuracy: {}/{} ({:.2f}%)".format(
-                        running_samples,
-                        len(image_dataset[phase].dataset),
-                        100.0 * (running_samples / len(image_dataset[phase].dataset)),
-                        loss.item(),
-                        running_corrects,
-                        running_samples,
-                        100.0*accuracy,
-                    )
+    from PIL import ImageFile
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
+    for batch_idx, (data, target) in enumerate(train_loader, 1):
+        optimizer.zero_grad()
+        output = model(data)
+        loss = criterion(output, target)
+        loss.backward()
+        optimizer.step()
+        if batch_idx % 100 == 0:
+            logger.info(
+                "Train : [{}/{} ({:.0f}%)] Loss: {:.6f}".format(
+                    batch_idx * len(data),
+                    len(train_loader.dataset),
+                    100.0 * batch_idx / len(train_loader),
+                    loss.item(),
                 )
-
-            #NOTE: Comment lines below to train and test on whole dataset
-            if running_samples>(0.2*len(image_dataset[phase].dataset)):
-                break
-
+            )
     return model
-
     
 def net():
     '''
@@ -101,14 +82,23 @@ def net():
     num_features = model.fc.in_features
     
     model.fc = nn.Sequential(
-    nn.Linear(num_features, 10))
+    nn.Linear(num_features, 133))
+    
+    return model
 
-def create_data_loaders(data, batch_size):
+def create_data_loaders(data_dir, batch_size):
     '''
     This is an optional function that you may or may not need to implement
     depending on whether you need to use data loaders or not
     '''
-    pass
+    logger.info("Create train data loader")
+    cus_transform=transforms.Compose([
+        transforms.ToTensor(), 
+        transforms.Resize((224,224))
+    ])
+    data = torchvision.datasets.ImageFolder(root=data_dir, transform=cus_transform)
+    loader = torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=True)
+    return loader
 
 def main(args):
     '''
@@ -127,13 +117,15 @@ def main(args):
     TODO: Call the train function to start training your model
     Remember that you will need to set up a way to get training data from S3
     '''
+    train_loader = create_data_loaders(args.train_data_dir, args.batch_size)
+    test_loader = create_data_loaders(args.test_data_dir, args.batch_size)
     
     model=train(model, train_loader, loss_criterion, optimizer)
     
     '''
     TODO: Test the model to see its accuracy
     '''
-    test(model, test_loader, criterion)
+    test(model, test_loader)
     
     '''
     TODO: Save the trained model
@@ -146,19 +138,19 @@ if __name__=='__main__':
     TODO: Specify all the hyperparameters you need to use to train your model.
     '''
     parser.add_argument(
-        "--batch-size",
+        "--batch-size",   # the actual variable is batch_size
         type=int,
         default=64,
         metavar="N",
         help="input batch size for training (default: 64)",
     )
-    parser.add_argument(
-        "--test-batch-size",
-        type=int,
-        default=1000,
-        metavar="N",
-        help="input batch size for testing (default: 1000)",
-    )
+#     parser.add_argument(
+#         "--test-batch-size",
+#         type=int,
+#         default=1000,
+#         metavar="N",
+#         help="input batch size for testing (default: 1000)",
+#     )
     parser.add_argument(
         "--epochs",
         type=int,
@@ -170,10 +162,32 @@ if __name__=='__main__':
         "--lr", type=float, default=0.01, metavar="LR", help="learning rate (default: 0.01)"
     )
 
+    # refer to https://sagemaker.readthedocs.io/en/stable/overview.html#prepare-a-training-script
     
-    parser.add_argument('--data_dir', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
-    parser.add_argument('--model_dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--output_dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
+    parser.add_argument(
+        "--train-data-dir", # the actual variable is train_data_dir
+        type=str,
+        default=os.environ['SM_CHANNEL_TRAIN'],
+        metavar="TDD",
+        help="Training data directory",
+    )
+    parser.add_argument(
+        "--test-data-dir",
+        type=str,
+        default=os.environ['SM_CHANNEL_TEST'],
+        metavar="EDD",
+        help="Test data directory",
+    )
+    parser.add_argument(
+        "--val-data-dir",
+        type=str,
+        default=os.environ['SM_CHANNEL_VAL'],
+        metavar="VDD",
+        help="Test data directory",
+    )
+    
+    parser.add_argument('--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
+    parser.add_argument('--output-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
 
     args=parser.parse_args()
     
