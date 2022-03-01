@@ -130,7 +130,8 @@ def main(args):
     '''
     TODO: Save the trained model
     '''
-    torch.save(model, args.model_dir)
+    path = os.path.join(args.model_dir, "model.pth")
+    torch.save(model.cpu().state_dict(), path)
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
