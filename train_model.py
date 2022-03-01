@@ -126,12 +126,12 @@ def main(args):
     train_loader = create_data_loaders(args.train_data_dir, args.batch_size)
     test_loader = create_data_loaders(args.test_data_dir, args.batch_size)
     
-    model=train(model, train_loader, loss_criterion, optimizer)
+    model=train(model, train_loader, loss_criterion, optimizer, hook)
     
     '''
     TODO: Test the model to see its accuracy
     '''
-    test(model, test_loader)
+    test(model, test_loader, hook)
     
     '''
     TODO: Save the trained model
@@ -144,7 +144,34 @@ if __name__=='__main__':
     '''
     TODO: Specify all the hyperparameters you need to use to train your model.
     '''
+    parser.add_argument(
+        "--batch-size",   # the actual variable is batch_size
+        type=int,
+        default=64,
+        metavar="N",
+        help="input batch size for training (default: 64)",
+    )
+#     parser.add_argument(
+#         "--test-batch-size",
+#         type=int,
+#         default=1000,
+#         metavar="N",
+#         help="input batch size for testing (default: 1000)",
+#     )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=5,
+        metavar="N",
+        help="number of epochs to train (default: 10)",
+    )
+#     parser.add_argument(
+#         "--lr", type=float, default=0.01, metavar="LR", help="learning rate (default: 0.01)"
+#     )    
     
+    parser.add_argument(
+        "--learning_rate", type=float, default=0.01, metavar="LR", help="learning rate (default: 0.01)"
+    )    
     # refer to https://sagemaker.readthedocs.io/en/stable/overview.html#prepare-a-training-script
     
     parser.add_argument(
