@@ -109,8 +109,8 @@ def main(args):
     TODO: Initialize a model by calling the net function
     '''
     model=net()
-#     hook = smd.Hook.create_from_json_file()
-    hook = smd.Hook(out_dir=args.output_dir)
+    hook = smd.Hook.create_from_json_file()
+#     hook = smd.Hook(out_dir=args.output_dir) # this line of code would result in error: all the collection files could not be loaded.
     hook.register_hook(model)
     
     '''
