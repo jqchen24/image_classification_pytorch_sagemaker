@@ -73,8 +73,6 @@ def train(model, train_loader, criterion, optimizer, hook):
             )
     return model    
     
-    pass
-    
 def net():
     '''
     TODO: Complete this function that initializes your model
@@ -119,28 +117,27 @@ def main(args):
     TODO: Create your loss and optimizer
     '''
     loss_criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.fc.parameters(), lr=0.001)
-    hook.register_loss(loss_criterion)
+    optimizer = optim.Adam(model.fc.parameters(), lr=args.learning_rate)
+#     hook.register_loss(loss_criterion)
     
     '''
     TODO: Call the train function to start training your model
     Remember that you will need to set up a way to get training data from S3
     '''
+  
     train_loader = create_data_loaders(args.train_data_dir, args.batch_size)
     test_loader = create_data_loaders(args.test_data_dir, args.batch_size)
     
-    model=train(model, train_loader, loss_criterion, optimizer, hook)
+    for epoch in range(1, args.epochs + 1):
+     
+        model = train(model, train_loader, loss_criterion, optimizer, hook)
+        test(model, test_loader, hook)
     
-    '''
-    TODO: Test the model to see its accuracy
-    '''
-    test(model, test_loader, hook)
-    
-    '''
-    TODO: Save the trained model
-    '''
-    path = os.path.join(args.model_dir, "model.pth")
-    torch.save(model.cpu().state_dict(), path)
+        '''
+        TODO: Save the trained model
+        '''
+        path = os.path.join(args.model_dir, "model.pth")
+        torch.save(model.cpu().state_dict(), path)
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
