@@ -9,6 +9,10 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 import smdebug.pytorch as smd
 import argparse
+try:
+  import smdebug
+except:
+  pass
 from smdebug.profiler.utils import str2bool
 from smdebug.pytorch import get_hook
 import torch.nn.functional as F
@@ -103,6 +107,14 @@ def create_data_loaders(data_dir, batch_size):
     data = torchvision.datasets.ImageFolder(root=data_dir, transform=cus_transform)
     loader = torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=True)
     return loader
+
+
+def model_fn(model_dir):
+    model = net()
+    with open(os.path.join(model_dir, 'model.pth'), 'rb') as f:
+        model.load_state_dict(torch.load(f))
+    return model
+
 
 def main(args):
     '''
