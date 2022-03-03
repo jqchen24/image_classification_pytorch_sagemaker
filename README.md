@@ -7,8 +7,6 @@ Use AWS Sagemaker to train a pretrained model that can perform image classificat
 The dataset I'm using for this project is dog breed dataset (https://s3-us-west-1.amazonaws.com/udacity-aind/dog-project/dogImages.zip). After unzipping, there are three folders - train, valid and test, with each containing 133 subfolders, representing 133 dog breeds. The goal of the project is to create a classifier capable of determining a dog's breed from a photo.
 
 ## Hyperparameter Tuning
-What kind of model did you choose for this experiment and why? Give an overview of the types of parameters and their ranges used for the hyperparameter search
-
 I used resnet18 as the pretrained model because it's one of the most widely used models for image classification. Below is a list of hyperparameters I chose to optimize for:
 
 - Learning rate: ContinuousParameter(0.001, 0.1),
