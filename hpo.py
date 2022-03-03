@@ -19,7 +19,7 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 
 import argparse
 
-def test(model, test_loader):
+def test(model, test_loader, criterion):
     '''
     TODO: Complete this function that can take a model and a 
           testing data loader and will get the test accuray/loss of the model
@@ -31,7 +31,7 @@ def test(model, test_loader):
     with torch.no_grad():
         for data, target in test_loader:
             output = model(data)
-            test_loss += F.nll_loss(output, target, size_average=False).item()  # sum up batch loss
+            test_loss += criterion(output, target).item()  # sum up batch loss
             pred = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
@@ -101,17 +101,20 @@ def create_data_loaders(data_dir, batch_size):
     return loader
 
 def main(args):
+    
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    
     '''
     TODO: Initialize a model by calling the net function
     '''
     model=net()
-    
+    model.to(device)
     '''
     TODO: Create your loss and optimizer
     '''
     
     loss_criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.fc.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.fc.parameters(), lr=args.learning_rate)
     
     '''
     TODO: Call the train function to start training your model
@@ -120,18 +123,20 @@ def main(args):
     train_loader = create_data_loaders(args.train_data_dir, args.batch_size)
     test_loader = create_data_loaders(args.test_data_dir, args.batch_size)
     
-    model=train(model, train_loader, loss_criterion, optimizer)
     
-    '''
-    TODO: Test the model to see its accuracy
-    '''
-    test(model, test_loader)
-    
-    '''
-    TODO: Save the trained model
-    '''
-    path = os.path.join(args.model_dir, "model.pth")
-    torch.save(model.cpu().state_dict(), path)
+    for epoch in range(1, args.epochs + 1):
+        model=train(model, train_loader, loss_criterion, optimizer)
+
+        '''
+        TODO: Test the model to see its accuracy
+        '''
+        test(model, test_loader, loss_criterion)
+
+        '''
+        TODO: Save the trained model
+        '''
+        path = os.path.join(args.model_dir, "model.pth")
+        torch.save(model.cpu().state_dict(), path)
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
@@ -160,7 +165,7 @@ if __name__=='__main__':
         help="number of epochs to train (default: 10)",
     )
     parser.add_argument(
-        "--lr", type=float, default=0.01, metavar="LR", help="learning rate (default: 0.01)"
+        "--learning-rate", type=float, default=0.01, metavar="LR", help="learning rate (default: 0.01)"
     )
 
     # refer to https://sagemaker.readthedocs.io/en/stable/overview.html#prepare-a-training-script

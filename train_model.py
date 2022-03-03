@@ -9,10 +9,7 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 import smdebug.pytorch as smd
 import argparse
-try:
-  import smdebug
-except:
-  pass
+import smdebug
 from smdebug.profiler.utils import str2bool
 from smdebug.pytorch import get_hook
 import torch.nn.functional as F
@@ -26,11 +23,11 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 
 #TODO: Import dependencies for Debugging andd Profiling
 
-def test(model, test_loader, hook):
+def test(model, test_loader, criterion, hook):
     '''
-    TODO: Complete this function that can take a model and a 
-          testing data loader and will get the test accuray/loss of the model
-          Remember to include any debugging/profiling hooks that you might need
+    Complete this function that can take a model and a 
+    testing data loader and will get the test accuray/loss of the model
+    Remember to include any debugging/profiling hooks that you might need
     '''
     model.eval()
     hook.set_mode(smd.modes.EVAL)
@@ -39,7 +36,7 @@ def test(model, test_loader, hook):
     with torch.no_grad():
         for data, target in test_loader:
             output = model(data)
-            test_loss += F.nll_loss(output, target, size_average=False).item()  # sum up batch loss
+            test_loss += criterion(output, target).item()  # need to make sure test loss uses the same loss function as train loss
             pred = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
@@ -52,9 +49,9 @@ def test(model, test_loader, hook):
 
 def train(model, train_loader, criterion, optimizer, hook):
     '''
-    TODO: Complete this function that can take a model and
-          data loaders for training and will get train the model
-          Remember to include any debugging/profiling hooks that you might need
+    Complete this function that can take a model and
+    data loaders for training and will get train the model
+    Remember to include any debugging/profiling hooks that you might need
     '''
     model.train()
     hook.set_mode(smd.modes.TRAIN) 
@@ -79,8 +76,8 @@ def train(model, train_loader, criterion, optimizer, hook):
     
 def net():
     '''
-    TODO: Complete this function that initializes your model
-          Remember to use a pretrained model
+    Complete this function that initializes your model
+    Remember to use a pretrained model
     '''
     model = models.resnet18(pretrained=True)
     
@@ -118,7 +115,7 @@ def model_fn(model_dir):
 
 def main(args):
     '''
-    TODO: Initialize a model by calling the net function
+    Initialize a model by calling the net function
     '''
     model=net()
     hook = smd.Hook.create_from_json_file()
@@ -126,14 +123,14 @@ def main(args):
     hook.register_hook(model)
     
     '''
-    TODO: Create your loss and optimizer
+    Create your loss and optimizer
     '''
     loss_criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.fc.parameters(), lr=args.learning_rate)
 #     hook.register_loss(loss_criterion)
     
     '''
-    TODO: Call the train function to start training your model
+    Call the train function to start training your model
     Remember that you will need to set up a way to get training data from S3
     '''
   
@@ -143,10 +140,10 @@ def main(args):
     for epoch in range(1, args.epochs + 1):
      
         model = train(model, train_loader, loss_criterion, optimizer, hook)
-        test(model, test_loader, hook)
+        test(model, test_loader, loss_criterion, hook)
     
         '''
-        TODO: Save the trained model
+        Save the trained model
         '''
         path = os.path.join(args.model_dir, "model.pth")
         torch.save(model.cpu().state_dict(), path)
@@ -154,7 +151,7 @@ def main(args):
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
     '''
-    TODO: Specify all the hyperparameters you need to use to train your model.
+    Specify all the hyperparameters you need to use to train your model.
     '''
     parser.add_argument(
         "--batch-size",   # the actual variable is batch_size
