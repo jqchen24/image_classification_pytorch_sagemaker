@@ -30,18 +30,37 @@ Remember that your README should:
 - Retrieve the best best hyperparameters from all your training jobs
 
 ## Debugging and Profiling
-**TODO**: Give an overview of how you performed model debugging and profiling in Sagemaker
+
+Steps to perform model debugging:
+
+- In the train() function, add the SMDebug hook for PyTorch with TRAIN mode.
+- In the test() function, add the SMDebug hook for PyTorch with EVAL mode.
+- In the main() function, create the SMDebug hook and register to the model.
+- In the main() function, pass the SMDebug hook to the train() and test() functions in the epoch loop.
+- Configure Debugger Rules and Hook Parameters in the main notebook.
+
+Profiling: Using Sagemaker Profiler is similar to using Sagemaker Debugger:
+- Create Profiler Rules and Configs
+- Pass Profiler Configuration to the Estimator
+- Configure hook in the training script
 
 ### Results
-**TODO**: What are the results/insights did you get by profiling/debugging your model?
 
-**TODO** Remember to provide the profiler html/pdf file in your submission.
+There are a few errors popping up on the debugging output - please the below list.
+
+- VanishingGradient: I would try to use Xavier initialization to initialize the weights in the neural networks.
+- PoorWeightInitialization: I would try using different weight initialization techniques.
+- LowGPUUtilization: I would try using GPU.
+- ProfilerReport: Not sure what to do with this.
 
 
 ## Model Deployment
-**TODO**: Give an overview of the deployed model and instructions on how to query the endpoint with a sample input.
 
-**TODO** Remember to provide a screenshot of the deployed active endpoint in Sagemaker.
+To deploy the model in a clean way, I created an inference script (*inference.py*) using PyTorchModel function. 
 
-## Standout Suggestions
-**TODO (Optional):** This is where you can provide information about any standout suggestions that you have attempted.
+To query the endpoint, below are the steps -
+
+1. Random pick an image file from the list of folders for different breeds.
+2. Resize the image
+3. Invoke the endpoint and make prediction. 
+
