@@ -18,6 +18,8 @@ Screenshot of completed training jobs:
 
 ![hyperparameter tuning](./screenshots/hpo_job.png)
 
+![validation_curve](./screenshot/validation_curve.png)
+
 ![training job](./screenshots/training_job.png)
 
 
@@ -46,10 +48,9 @@ Profiling: Using Sagemaker Profiler is similar to using Sagemaker Debugger:
 
 There are a few errors popping up on the debugging output - please the below list.
 
-- VanishingGradient: I would try to use Xavier initialization to initialize the weights in the neural networks.
-- PoorWeightInitialization: I would try using different weight initialization techniques.
-- LowGPUUtilization: I would try using GPU.
-- ProfilerReport: Not sure what to do with this.
+- Overfit: I would try implementing early stopping
+- PoorWeightInitialization: I would try to use different weight initialization techniques.
+- LossNotDecreasing: I would try implementing early stopping or using different learning rate.
 
 
 ## Model Deployment
