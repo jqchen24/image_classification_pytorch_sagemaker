@@ -30,6 +30,7 @@ def test(model, test_loader, criterion, hook):
     Remember to include any debugging/profiling hooks that you might need
     '''
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
     model.eval()
     hook.set_mode(smd.modes.EVAL)
     test_loss = 0
@@ -57,6 +58,7 @@ def train(model, train_loader, criterion, optimizer, hook):
     Remember to include any debugging/profiling hooks that you might need
     '''
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
     model.train()
     hook.set_mode(smd.modes.TRAIN) 
     from PIL import ImageFile
