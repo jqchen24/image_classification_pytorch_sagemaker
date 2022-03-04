@@ -26,7 +26,7 @@ def test(model, test_loader, criterion):
           Remember to include any debugging/profiling hooks that you might need
     '''
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-#     model.to(device)
+    model.to(device)
     model.eval()
     test_loss = 0
     correct = 0
@@ -53,7 +53,7 @@ def train(model, train_loader, criterion, optimizer):
           Remember to include any debugging/profiling hooks that you might need
     '''
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-#     model.to(device)
+    model.to(device)
     model.train()
     from PIL import ImageFile
     ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -115,8 +115,8 @@ def main(args):
     TODO: Initialize a model by calling the net function
     '''
     model=net()
-    model.cuda()
-#     model.to(device)
+#     model.cuda()
+    model.to(device)
     '''
     TODO: Create your loss and optimizer
     '''
