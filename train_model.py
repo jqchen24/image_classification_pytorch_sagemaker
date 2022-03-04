@@ -29,12 +29,15 @@ def test(model, test_loader, criterion, hook):
     testing data loader and will get the test accuray/loss of the model
     Remember to include any debugging/profiling hooks that you might need
     '''
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model.eval()
     hook.set_mode(smd.modes.EVAL)
     test_loss = 0
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
+            data = data.to(device)
+            target = target.to(device)
             output = model(data)
             test_loss += criterion(output, target).item()  # need to make sure test loss uses the same loss function as train loss
             pred = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
@@ -53,12 +56,15 @@ def train(model, train_loader, criterion, optimizer, hook):
     data loaders for training and will get train the model
     Remember to include any debugging/profiling hooks that you might need
     '''
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model.train()
     hook.set_mode(smd.modes.TRAIN) 
     from PIL import ImageFile
     ImageFile.LOAD_TRUNCATED_IMAGES = True
     for batch_idx, (data, target) in enumerate(train_loader, 1):
         optimizer.zero_grad()
+        data = data.to(device)
+        target = target.to(device)
         output = model(data)
         loss = criterion(output, target)
         loss.backward()
@@ -117,7 +123,10 @@ def main(args):
     '''
     Initialize a model by calling the net function
     '''
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    
     model=net()
+    model.to(device)
     hook = smd.Hook.create_from_json_file()
 #     hook = smd.Hook(out_dir=args.output_dir) # this line of code would result in error: all the collection files could not be loaded.
     hook.register_hook(model)
@@ -179,7 +188,7 @@ if __name__=='__main__':
 #     )    
     
     parser.add_argument(
-        "--learning_rate", type=float, default=0.01, metavar="LR", help="learning rate (default: 0.01)"
+        "--learning-rate", type=float, default=0.01, metavar="LR", help="learning rate (default: 0.01)"
     )    
     # refer to https://sagemaker.readthedocs.io/en/stable/overview.html#prepare-a-training-script
     

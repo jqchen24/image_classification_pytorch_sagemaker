@@ -25,11 +25,15 @@ def test(model, test_loader, criterion):
           testing data loader and will get the test accuray/loss of the model
           Remember to include any debugging/profiling hooks that you might need
     '''
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+#     model.to(device)
     model.eval()
     test_loss = 0
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
+            data = data.to(device)
+            target = target.to(device)
             output = model(data)
             test_loss += criterion(output, target).item()  # sum up batch loss
             pred = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
@@ -48,12 +52,15 @@ def train(model, train_loader, criterion, optimizer):
           data loaders for training and will get train the model
           Remember to include any debugging/profiling hooks that you might need
     '''
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+#     model.to(device)
     model.train()
-    
     from PIL import ImageFile
     ImageFile.LOAD_TRUNCATED_IMAGES = True
     for batch_idx, (data, target) in enumerate(train_loader, 1):
         optimizer.zero_grad()
+        data = data.to(device)
+        target = target.to(device)
         output = model(data)
         loss = criterion(output, target)
         loss.backward()
@@ -108,7 +115,8 @@ def main(args):
     TODO: Initialize a model by calling the net function
     '''
     model=net()
-    model.to(device)
+    model.cuda()
+#     model.to(device)
     '''
     TODO: Create your loss and optimizer
     '''
@@ -125,6 +133,7 @@ def main(args):
     
     
     for epoch in range(1, args.epochs + 1):
+        
         model=train(model, train_loader, loss_criterion, optimizer)
 
         '''
